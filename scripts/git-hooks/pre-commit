@@ -1,0 +1,14 @@
+#!/bin/sh
+# Runs .pre-commit-config.yaml hooks (gitleaks) on commit. Needed because
+# core.hooksPath=scripts/git-hooks bypasses the framework's .git/hooks shim.
+# Fails closed: no pre-commit available means no commit.
+if command -v pre-commit >/dev/null 2>&1; then
+  exec pre-commit run --hook-stage pre-commit
+fi
+for py in python python3 py; do
+  if command -v "$py" >/dev/null 2>&1 && "$py" -m pre_commit --version >/dev/null 2>&1; then
+    exec "$py" -m pre_commit run --hook-stage pre-commit
+  fi
+done
+echo "pre-commit not installed; gitleaks cannot run. Install: pip install pre-commit" >&2
+exit 1
