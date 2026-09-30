@@ -2,9 +2,10 @@
 
 All notable changes to datascope are documented here.
 
-## [Unreleased]
+## [2.4.2] — 2026-09-30
 
 ### Fixed
+- **A check that crashes no longer yields a report that reads as complete.** When an analyzer raised, the CLI printed a warning to stderr and still wrote a report — with zero findings from every analyzer failing, it said the data "appears clean". The failed checks are now recorded and disclosed in every output: a red banner above the summary in HTML, a red line on the PDF title page, a highlighted row on the annotated Excel Findings sheet, `source.failed_checks` in JSON, and a `WARNING:` line in the terminal summary. Reports where every check ran are byte-identical to before.
 - **A corrupt `.xlsx` now fails with a one-line error, not a traceback.** An empty, truncated or renamed file (or a zip with no workbook inside) surfaced openpyxl's raw `BadZipFile`/`KeyError`. The Excel loader now reports "`<file>` is not a readable .xlsx file … Re-export it from Excel and try again." and the CLI exits 1.
 
 ## [2.4.1] — 2026-09-30
