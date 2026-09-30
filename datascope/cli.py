@@ -106,6 +106,7 @@ def _format_summary(findings: list, source_metadata: dict, output_path: Path) ->
     from datascope.reports._palette import (
         SEVERITY_LABELS,
         SEVERITY_ORDER,
+        incomplete_checks_text,
         severity_counts,
     )
 
@@ -136,6 +137,11 @@ def _format_summary(findings: list, source_metadata: dict, output_path: Path) ->
 
     if total == 0:
         lines.append("  No issues detected.")
+
+    incomplete = incomplete_checks_text(source_metadata)
+    if incomplete:
+        lines.append("")
+        lines.append(f"WARNING: {incomplete}")
 
     # Top critical findings (up to 5).
     critical = [f for f in findings if f.severity is Severity.CRITICAL]
@@ -279,14 +285,20 @@ def main(argv: list[str] | None = None) -> None:
     ]
 
     all_findings: list = []
+    failed_checks: list[str] = []
     for analyzer in analyzers:
         try:
             all_findings.extend(analyzer(result))
         except Exception as exc:
+            failed_checks.append(analyzer.__name__.removeprefix("analyze_").replace("_", " "))
             if args.verbose:
                 traceback.print_exc(file=sys.stderr)
             else:
                 print(f"Warning: {analyzer.__name__} failed: {exc}", file=sys.stderr)
+    if failed_checks:
+        # Every report writer reads source_metadata; this is how they learn
+        # the report is incomplete (JSON carries it under "source").
+        result.source_metadata["failed_checks"] = failed_checks
 
     # --- process --------------------------------------------------------
     from datascope.findings import process_findings

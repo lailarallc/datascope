@@ -25,6 +25,7 @@ from datascope.reports._palette import (
     SEVERITY_LABELS,
     SEVERITY_ORDER,
     health_assessment_text,
+    incomplete_checks_text,
     severity_counts,
 )
 
@@ -127,6 +128,16 @@ def write_html(
         grouped[f.severity or Severity.INFO].append(f)
 
     health = _health_assessment(findings)
+
+    incomplete = incomplete_checks_text(source_metadata)
+    crit_accent, crit_tint = SEVERITY_COLORS[Severity.CRITICAL]
+    incomplete_banner = (
+        f'\n\n  <div class="incomplete" role="alert" style="background: {crit_tint}; '
+        f'border-left: 4px solid {crit_accent}; padding: 16px 20px; margin: 16px 0;">'
+        f'<p style="font-size: 14px; color: #0d0d0d;">{_e(incomplete)}</p></div>'
+        if incomplete
+        else ""
+    )
 
     summary_cards = ""
     for sev in SEVERITY_ORDER:
@@ -249,7 +260,7 @@ def write_html(
   <div class="title-section">
     <h1>Data Quality Diagnostic</h1>
     <div class="subtitle">{_e(filename)} &middot; {rows} rows &times; {cols} columns &middot; {now}</div>
-  </div>
+  </div>{incomplete_banner}
 
   <div class="summary-row">
     {summary_cards}

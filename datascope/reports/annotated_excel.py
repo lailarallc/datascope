@@ -22,6 +22,7 @@ from datascope.reports._palette import (
     INFO_TINT_HEX,
     SEVERITY_LABELS,
     WARNING_TINT_HEX,
+    incomplete_checks_text,
 )
 
 _SEVERITY_FILLS = {
@@ -130,6 +131,12 @@ def write_annotated_excel(
         for col_idx, val in enumerate(values, start=1):
             cell = _write_cell(ws_findings, row_idx, col_idx, val)
             cell.fill = fill
+
+    incomplete = incomplete_checks_text(source_metadata)
+    if incomplete:
+        cell = _write_cell(ws_findings, len(findings) + 3, 1, incomplete)
+        cell.fill = _SEVERITY_FILLS[Severity.CRITICAL]
+        cell.font = Font(bold=True)
 
     col_widths = [18, 22, 10, 40, 50, 40]
     for col_idx, width in enumerate(col_widths, start=1):

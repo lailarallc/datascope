@@ -87,6 +87,23 @@ def severity_counts(findings: Iterable[Finding]) -> dict[Severity, int]:
 # ---------------------------------------------------------------------------
 
 
+def incomplete_checks_text(source_metadata: dict) -> str | None:
+    """Warning for a report built with some checks missing, else None.
+
+    The CLI records analyzers that raised in ``source_metadata["failed_checks"]``.
+    Without this, zero findings from a failed check reads as a clean result.
+    """
+    failed = source_metadata.get("failed_checks") or []
+    if not failed:
+        return None
+    noun = "check" if len(failed) == 1 else "checks"
+    return (
+        f"Incomplete report: {len(failed)} {noun} failed to run "
+        f"({', '.join(failed)}). Issues those checks look for are not reported "
+        f"here, so their absence does not mean the data is clean."
+    )
+
+
 def health_assessment_text(counts: dict[Severity, int]) -> str:
     """Return a plain-English health assessment from severity counts."""
     total = sum(counts.values())

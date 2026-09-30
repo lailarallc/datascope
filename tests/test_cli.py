@@ -298,3 +298,59 @@ class TestOutputNaming:
         out_dir = tmp_path / "out"
         main([str(csv_path), "--output-dir", str(out_dir)])
         assert (out_dir / "my_data_file_diagnostic.pdf").exists()
+
+
+# ===================================================================
+# A check that crashes must not produce a report that reads as complete
+# ===================================================================
+
+class TestFailedCheckIsDisclosed:
+
+    @pytest.fixture
+    def broken_mixed_dates(self, monkeypatch):
+        import datascope.analyzers as analyzers
+
+        def boom(_result):
+            raise RuntimeError("simulated analyzer crash")
+
+        boom.__name__ = "analyze_mixed_dates"
+        monkeypatch.setattr(analyzers, "analyze_mixed_dates", boom)
+
+    _MSG = "Incomplete report: 1 check failed to run (mixed dates)"
+
+    def test_stdout_and_json_disclose_failed_check(self, broken_mixed_dates, capsys, tmp_path):
+        import json
+
+        main([str(SAMPLE_XLSX), "--output-dir", str(tmp_path), "--format", "both"])
+        out = capsys.readouterr()
+        assert self._MSG in out.out
+        assert "analyze_mixed_dates failed" in out.err
+        payload = json.loads((tmp_path / "sample_mixed_types_diagnostic.json").read_text(encoding="utf-8"))
+        assert payload["source"]["failed_checks"] == ["mixed dates"]
+
+    def test_html_shows_banner(self, broken_mixed_dates, capsys, tmp_path):
+        main([str(SAMPLE_XLSX), "--output-dir", str(tmp_path), "--format", "html"])
+        html = (tmp_path / "sample_mixed_types_diagnostic.html").read_text(encoding="utf-8")
+        assert 'class="incomplete" role="alert"' in html
+        assert self._MSG in html
+
+    def test_annotated_excel_shows_warning(self, broken_mixed_dates, capsys, tmp_path):
+        from openpyxl import load_workbook
+
+        main([str(SAMPLE_XLSX), "--output-dir", str(tmp_path), "--format", "annotated-excel"])
+        ws = load_workbook(tmp_path / "sample_mixed_types_annotated.xlsx")["Findings"]
+        texts = [c.value for c in ws["A"] if isinstance(c.value, str)]
+        assert any(t.startswith(self._MSG) for t in texts)
+
+    def test_pdf_title_page_shows_warning(self, broken_mixed_dates, capsys, tmp_path):
+        pypdf = pytest.importorskip("pypdf")
+        main([str(SAMPLE_XLSX), "--output-dir", str(tmp_path)])
+        reader = pypdf.PdfReader(tmp_path / "sample_mixed_types_diagnostic.pdf")
+        first_page = " ".join(reader.pages[0].extract_text().split())
+        assert "Incomplete report" in first_page and "mixed dates" in first_page
+
+    def test_no_failure_means_no_warning(self, capsys, tmp_path):
+        main([str(SAMPLE_XLSX), "--output-dir", str(tmp_path), "--format", "html"])
+        assert "Incomplete report" not in capsys.readouterr().out
+        html = (tmp_path / "sample_mixed_types_diagnostic.html").read_text(encoding="utf-8")
+        assert 'class="incomplete"' not in html

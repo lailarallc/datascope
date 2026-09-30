@@ -52,6 +52,7 @@ from datascope.reports._palette import (
     WARNING_BG_HEX,
     WARNING_TINT_HEX,
     health_assessment_text,
+    incomplete_checks_text,
     severity_counts,
 )
 
@@ -262,6 +263,14 @@ def _build_title_page(
         f"{source_metadata.get('row_count', 'N/A')} rows",
         styles["subtitle"],
     ))
+    incomplete = incomplete_checks_text(source_metadata)
+    if incomplete:
+        story.append(Spacer(1, 0.2 * inch))
+        story.append(Paragraph(
+            _safe(incomplete),
+            ParagraphStyle("incomplete", parent=styles["subtitle"], textColor=CRITICAL_BG,
+                           fontName=SANS_BOLD),
+        ))
     story.append(PageBreak())
 
 
