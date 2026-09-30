@@ -2,6 +2,16 @@
 
 Durable choices with rationale. Newest on top.
 
+## 2026-09-30 — Output never alters client values, even to neutralize them
+
+- **Why:** datascope reports on the data it received. Prepending `'` or a space to
+  defuse a formula changes the value, so the deliverable no longer matches the source.
+- **Scope:** Every output format (annotated Excel, HTML, PDF, JSON). Formula-like text
+  is made safe through cell type or escaping (`data_type="s"` + `quotePrefix`, `_e`,
+  `_safe`), never by editing the string.
+- **Do not:** prepend, strip or rewrite client text in any output. Do not "fix"
+  `_write_cell` to the OWASP apostrophe pattern.
+
 ## 2026-09-02 — A font/asset change is not done until all sample formats are regenerated
 
 - **Why:** Vendored fonts (`datascope/reports/fonts/*.woff2`) are base64-embedded
