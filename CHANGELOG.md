@@ -2,6 +2,11 @@
 
 All notable changes to datascope are documented here.
 
+## [2.4.1] — 2026-09-30
+
+### Security
+- **Annotated Excel no longer turns client text into live formulas.** openpyxl writes any string starting with `=` as a formula, so a source cell such as `=HYPERLINK("http://…","click")` became an active formula in the deliverable workbook. String cells starting with `=`, `+`, `-`, `@`, tab or carriage return — in the Data sheet, its headers, and the Findings sheet — are now written as text cells with `quotePrefix` set. The value is kept exactly as supplied: nothing is prepended, so the data datascope reports on is the data it received. Numeric cells (e.g. `-5`) are unaffected.
+
 ## [2.4.0] — 2026-09-30
 
 ### Fixed
