@@ -225,6 +225,18 @@ Goal: Deepen the technical moat and expand the addressable audience.
 
 ## Improvement History
 
+### 2026-09-30 — Audit findings fixed and released (2.4.0 → 2.4.2)
+- **2.4.0:** tagged and published the CSV mixed-date fix; PyPI and the GitHub README now agree.
+- **2.4.1:** annotated Excel writes formula-like client text (`= + - @` tab CR) as text cells with `quotePrefix`; values unchanged.
+- **2.4.2:** corrupt `.xlsx` exits 1 with a one-line error; a crashed analyzer is disclosed in every report (HTML/PDF/Excel/JSON/stdout).
+- **Housekeeping:** gitleaks pre-commit hook carried over from the stale clone (`published/datascope`, now `archived/datascope-stale-2026-09`); this clone is the only live one.
+
+### 2026-09-23 — Audit (health check only)
+- **Findings:** 2 critical, 5 important, 4 nice-to-have
+- **Top concerns:** v2.4.0 (CSV mixed-date fix) was never tagged or published — PyPI still serves 2.3.4, which silently reconciles mixed date formats in CSVs, while the GitHub README already says CSV mixed dates are detected. Annotated-Excel output writes any input text starting with `=` as a live formula (confirmed with a probe CSV), so a client file can carry formula/CSV injection into the deliverable. A corrupt `.xlsx` crashes the CLI with a raw `BadZipFile` traceback, and a failed analyzer still produces a report that reads as complete.
+- **Action taken:** Audit only — no fixes this session. Local tree diverged from origin/main (1 local gitleaks-hook commit vs 2 origin commits from 2026-09-02); judged against origin/main. Tests: 364 pass, 2 `test_samples_fidelity` failures locally are the stale pre-5b20441 samples — origin/main's samples match current code output. Ruff clean. Automated /security-review, /ce:review, data-science-reviewer not available; manual pass done instead.
+- **Next review:** 2026-12-22
+
 ### 2026-07-31 — Verification pass (post-Claude-Code-issues) + code review
 - **Trigger:** User-initiated — verify the recent London-95 visual pass landed correctly.
 - **What was reviewed:** 3 reviewer agents (correctness, project-standards, maintainability)
