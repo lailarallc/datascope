@@ -33,6 +33,25 @@ _SEVERITY_FILLS = {
 _HEADER_FILL = PatternFill(start_color=CHICAGO_20_HEX[1:], end_color=CHICAGO_20_HEX[1:], fill_type="solid")
 _HEADER_FONT = Font(color="FFFFFF", bold=True, size=10)
 
+# Leading characters spreadsheet apps treat as the start of a formula (OWASP
+# CSV/formula injection list). Only str values are checked, so -5 stays a number.
+_FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _write_cell(ws, row: int, column: int, value: Any):
+    """Write a cell; client text that looks like a formula stays inert text.
+
+    openpyxl stores any str starting with "=" as a live formula. For trigger
+    strings the cell is forced to a string cell and given quotePrefix, so the
+    value is kept byte-for-byte (no prepended apostrophe or space) and Excel
+    treats it as text even when the cell is edited.
+    """
+    cell = ws.cell(row=row, column=column, value=value)
+    if isinstance(value, str) and value.startswith(_FORMULA_TRIGGERS):
+        cell.data_type = "s"
+        cell.quotePrefix = True
+    return cell
+
 
 def write_annotated_excel(
     findings: list[Finding],
@@ -70,13 +89,13 @@ def write_annotated_excel(
             field_to_severity[f.field_name] = sev
 
     for col_idx, header in enumerate(headers, start=1):
-        cell = ws_data.cell(row=1, column=col_idx, value=header)
+        cell = _write_cell(ws_data, 1, col_idx, header)
         cell.fill = _HEADER_FILL
         cell.font = _HEADER_FONT
 
     for row_idx, row_data in enumerate(source_data, start=2):
         for col_idx, value in enumerate(row_data, start=1):
-            cell = ws_data.cell(row=row_idx, column=col_idx, value=value)
+            cell = _write_cell(ws_data, row_idx, col_idx, value)
             if col_idx <= len(headers):
                 header = headers[col_idx - 1]
                 if header in field_to_severity:
@@ -90,7 +109,7 @@ def write_annotated_excel(
 
     finding_headers = ["Field", "Issue Type", "Severity", "Assumption", "Reality", "Fix"]
     for col_idx, header in enumerate(finding_headers, start=1):
-        cell = ws_findings.cell(row=1, column=col_idx, value=header)
+        cell = _write_cell(ws_findings, 1, col_idx, header)
         cell.fill = _HEADER_FILL
         cell.font = _HEADER_FONT
 
@@ -109,7 +128,7 @@ def write_annotated_excel(
             f.fix_recommendation or "",
         ]
         for col_idx, val in enumerate(values, start=1):
-            cell = ws_findings.cell(row=row_idx, column=col_idx, value=val)
+            cell = _write_cell(ws_findings, row_idx, col_idx, val)
             cell.fill = fill
 
     col_widths = [18, 22, 10, 40, 50, 40]

@@ -349,3 +349,53 @@ class TestColumnWidths:
         assert ws.column_dimensions["A"].width == 18
         assert ws.column_dimensions["B"].width == 22
         assert ws.column_dimensions["C"].width == 10
+
+
+# ---------------------------------------------------------------------------
+# Formula injection: client text must never become a live formula
+# ---------------------------------------------------------------------------
+
+_INJECTION = '=HYPERLINK("http://evil.example","click")'
+
+
+def _sheet_xml(path: Path, sheet: int) -> str:
+    import zipfile
+
+    with zipfile.ZipFile(path) as z:
+        return z.read(f"xl/worksheets/sheet{sheet}.xml").decode("utf-8")
+
+
+class TestFormulaInjection:
+    def test_formula_text_stays_text_with_value_unchanged(self, tmp_path: Path):
+        out = tmp_path / "out.xlsx"
+        data = [[_INJECTION, -5, "+SUM(A1)", "@cmd", "-note", "\tTAB", "plain"]]
+        headers = ["a", "b", "c", "d", "e", "f", "g"]
+        write_annotated_excel([], _DEFAULT_METADATA, data, headers, out)
+
+        ws = load_workbook(out)["Data"]
+        for col, expected in enumerate(data[0], start=1):
+            cell = ws.cell(row=2, column=col)
+            assert cell.value == expected  # byte-for-byte, nothing prepended
+        assert ws["A2"].data_type == "s"
+        assert ws["A2"].quotePrefix is True
+        assert "<f>" not in _sheet_xml(out, 1)
+
+    def test_negative_number_stays_a_number(self, tmp_path: Path):
+        out = tmp_path / "out.xlsx"
+        write_annotated_excel([], _DEFAULT_METADATA, [[-5, -2.5]], ["x", "y"], out)
+        ws = load_workbook(out)["Data"]
+        assert ws["A2"].value == -5 and ws["A2"].data_type == "n"
+        assert ws["B2"].value == -2.5 and ws["B2"].data_type == "n"
+        assert not ws["A2"].quotePrefix
+
+    def test_formula_header_and_finding_field_stay_text(self, tmp_path: Path):
+        out = tmp_path / "out.xlsx"
+        finding = _critical_finding(field_name=_INJECTION)
+        write_annotated_excel(
+            process_findings([finding]), _DEFAULT_METADATA, [[1]], [_INJECTION], out
+        )
+        wb = load_workbook(out)
+        assert wb["Data"]["A1"].value == _INJECTION
+        assert wb["Findings"]["A2"].value == _INJECTION
+        assert "<f>" not in _sheet_xml(out, 1)
+        assert "<f>" not in _sheet_xml(out, 2)
