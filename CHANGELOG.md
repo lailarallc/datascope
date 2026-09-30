@@ -2,6 +2,11 @@
 
 All notable changes to datascope are documented here.
 
+## [Unreleased]
+
+### Fixed
+- **A corrupt `.xlsx` now fails with a one-line error, not a traceback.** An empty, truncated or renamed file (or a zip with no workbook inside) surfaced openpyxl's raw `BadZipFile`/`KeyError`. The Excel loader now reports "`<file>` is not a readable .xlsx file … Re-export it from Excel and try again." and the CLI exits 1.
+
 ## [2.4.1] — 2026-09-30
 
 ### Security

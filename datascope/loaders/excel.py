@@ -7,6 +7,7 @@ analysers never need to know which loader ran.
 
 from __future__ import annotations
 
+import zipfile
 from pathlib import Path
 
 import pandas as pd
@@ -38,7 +39,14 @@ def load_excel(path: Path, sheet: str | int = 0) -> LoaderResult:
     from openpyxl import load_workbook
 
     path = Path(path)
-    wb = load_workbook(path, data_only=True, read_only=True)
+    try:
+        wb = load_workbook(path, data_only=True, read_only=True)
+    except (zipfile.BadZipFile, KeyError) as exc:
+        # Not a zip (empty, truncated, renamed) or a zip without workbook parts.
+        raise ValueError(
+            f"{path.name} is not a readable .xlsx file (corrupt, truncated, "
+            f"or not an Excel workbook). Re-export it from Excel and try again."
+        ) from exc
 
     try:
         if isinstance(sheet, int):

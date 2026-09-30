@@ -90,6 +90,32 @@ class TestErrorPaths:
         assert ".csv" in captured.err
         assert ".xlsx" in captured.err
 
+    @pytest.mark.parametrize(
+        "content",
+        [b"not a zip at all", b"", b"PK\x03\x04truncated"],
+        ids=["garbage", "empty", "truncated"],
+    )
+    def test_corrupt_xlsx_exits_1_with_message_not_traceback(self, capsys, tmp_path, content):
+        bad = tmp_path / "broken.xlsx"
+        bad.write_bytes(content)
+        with pytest.raises(SystemExit) as exc_info:
+            main([str(bad)])
+        assert exc_info.value.code == 1
+        err = capsys.readouterr().err
+        assert "broken.xlsx is not a readable .xlsx file" in err
+        assert "Traceback" not in err
+
+    def test_zip_without_workbook_exits_1_with_message(self, capsys, tmp_path):
+        import zipfile
+
+        bad = tmp_path / "notexcel.xlsx"
+        with zipfile.ZipFile(bad, "w") as z:
+            z.writestr("hello.txt", "x")
+        with pytest.raises(SystemExit) as exc_info:
+            main([str(bad)])
+        assert exc_info.value.code == 1
+        assert "not a readable .xlsx file" in capsys.readouterr().err
+
 
 # ===================================================================
 # Happy path -- xlsx
