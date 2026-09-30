@@ -2,18 +2,15 @@
 
 All notable changes to datascope are documented here.
 
-## [Unreleased]
-
-### Fixed
-- HTML report generator timestamp now honors `SOURCE_DATE_EPOCH` (the reproducible-builds standard), so regenerated sample reports are byte-identical run-to-run. A bare `datetime.now()` in the report footer otherwise changed every run and defeated any byte-lock on the output.
-
-### Changed
-- Regenerated `samples/output/` from current source with `SOURCE_DATE_EPOCH` pinned, so the shipped showcase artifacts reflect the 2.4.0 tool and are reproducible. See `scripts/regenerate_samples.sh`. (The annotated `.xlsx` content is reproducible but its openpyxl envelope carries wall-clock member mtimes, so it is not raw-byte identical — the `.html`/`.pdf` are.)
-
-## [2.4.0] — 2026-08-05
+## [2.4.0] — 2026-09-30
 
 ### Fixed
 - **Mixed date formats are now detected in CSV files.** The CSV loader coerced date-like strings to `datetime` on load, erasing the raw format before the mixed-date analyzer could see it — so a column mixing `2026-01-01` and `01/02/2026` was silently reconciled and never flagged, the exact silent coercion datascope exists to surface. Date-like CSV cells are now kept as strings (a CSV has no type metadata; a date is text), so `analyze_mixed_dates` sees the raw formats and reports the inconsistency. Excel date cells, which arrive already typed from openpyxl, are unaffected.
+- HTML report generator timestamp now honors `SOURCE_DATE_EPOCH` (the reproducible-builds standard), so regenerated sample reports are byte-identical run-to-run. A bare `datetime.now()` in the report footer otherwise changed every run and defeated any byte-lock on the output.
+- Vendored Source Sans regular faces re-vendored from lailara-frame v1.5.1. The previous files were labeled weight 400 but were weight 200, so report body text rendered too light.
+
+### Changed
+- Regenerated `samples/output/` from current source with `SOURCE_DATE_EPOCH` pinned, so the shipped showcase artifacts reflect the 2.4.0 tool and are reproducible. See `scripts/regenerate_samples.sh`. (The annotated `.xlsx` content is reproducible but its openpyxl envelope carries wall-clock member mtimes, so it is not raw-byte identical — the `.html`/`.pdf` are.)
 
 ### Docs
 - README missing-value row now names both thresholds it depends on — flagged at ≥10% blank (`_DEFAULT_THRESHOLD_PCT`) and Warning at ≥50% / Info below (`findings/severity.py`). Correction: an earlier draft of this entry read "threshold now reads 10%", which put the flag floor into a row labeled *Warning* — the two are different decisions and the row now states both.
