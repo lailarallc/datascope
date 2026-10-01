@@ -225,6 +225,14 @@ Goal: Deepen the technical moat and expand the addressable audience.
 
 ## Improvement History
 
+### 2026-10-01 — Audit (health check only)
+- **Findings:** 1 critical, 6 important, 5 nice-to-have
+- **Top concerns:** Clean DD/MM/YYYY date columns are reported to clients as having 2 different date formats, because each value takes the first strptime pattern that fits (%m/%d/%Y is tried before %d/%m/%Y, format_check.py:123-124, :157). CSV rows with extra or missing fields are silently truncated or padded and never reported (csv_loader.py:148-149), so an unquoted comma drops a value without a finding.
+- **Other items:** cp1252 (Excel on Windows) CSVs with accented characters fail with a raw codec error; --quiet exits 0 even when an analyzer crashed; annotated-excel crashes on control characters (IllegalCharacterError); publish.yml uploads to PyPI without waiting for CI; workflow files split between root and .dev/ and drifted (root CLAUDE.md is a typography note, root HANDOFF stops at 2026-09-02, .dev/PLAN.md focus line stale). Nice-to-have: client report text polish (ungrammatical missing-value sentence, raw strptime codes, repeated examples); Parquet list columns and missing pyarrow fail badly; stale MsShawnP URLs in pyproject/README and a dead design-system path in .dev/CLAUDE.md; 4H requirements.lock and A4 numpy-in-requirements-dev checked but not done; missing_values docstring overclaims, 6 stale remote branches, sample fidelity test covers HTML only. No critical was refuted or downgraded in verification.
+- **Verified OK:** pytest 378 passed (DATABASE_URL/POSTGRES_PASSWORD unset, temp dirs in session scratchpad, no untracked files left); ruff clean; gitleaks clean over 105 commits; no listener on 5432-5434/15432-15433. HTML/PDF escaping, the 2.4.1 formula-injection fix, .gitignore coverage and the gitleaks pre-commit hook all present. PyPI serves 2.4.2 matching pyproject; CI green on last 3 runs; all Wave 2 criticals fixed. pip-audit skipped (writes outside repo, needs network; CI runs it). Security, code-quality and data-correctness reviews done by hand with 7 in-process probes; /security-review, /ce:review and data-science-reviewer skills not invoked.
+- **Action taken:** Audit only — no fixes this session
+- **Next review:** 2026-10-29 (supersedes the 2026-12-22 date in the 2026-09-23 entry; project is active)
+
 ### 2026-09-30 — Audit findings fixed and released (2.4.0 → 2.4.2)
 - **2.4.0:** tagged and published the CSV mixed-date fix; PyPI and the GitHub README now agree.
 - **2.4.1:** annotated Excel writes formula-like client text (`= + - @` tab CR) as text cells with `quotePrefix`; values unchanged.
