@@ -33,11 +33,18 @@ _FONTS_DIR = Path(__file__).parent / "fonts"
 
 
 def _font_face_css() -> str:
-    """Return @font-face rules with base64-embedded woff2 fonts."""
+    """Return @font-face rules with base64-embedded woff2 fonts.
+
+    Playfair Display is a variable font, so one file covers 400-700. The Source
+    Sans 3 files are static, one weight each, so each is declared at its real
+    weight: a 400-700 range on the static Regular file makes 600/700 text
+    render at 400 with no bolding. Requests for 700 resolve to SemiBold.
+    """
     blocks: list[str] = []
     for name, css_family, weight in [
         ("playfair-display-latin.woff2", "Playfair Display", "400 700"),
-        ("source-sans-3-latin.woff2", "Source Sans 3", "400 700"),
+        ("source-sans-3-latin.woff2", "Source Sans 3", "400"),
+        ("source-sans-3-semibold-latin.woff2", "Source Sans 3", "600"),
     ]:
         path = _FONTS_DIR / name
         if not path.exists():
