@@ -256,6 +256,41 @@ class TestUniformDateFormat:
 
 
 # ---------------------------------------------------------------------------
+# Ambiguous day/month values -- judged against the column, not alone
+# ---------------------------------------------------------------------------
+
+class TestAmbiguousDayMonth:
+    """A value like 05/01/2026 parses as both %m/%d/%Y and %d/%m/%Y.
+
+    It must not be pinned to whichever pattern is tried first: a clean
+    DD/MM/YYYY column was reported as having 2 date formats.
+    """
+
+    def test_clean_dd_mm_yyyy_column_no_finding(self):
+        values = ["15/01/2026", "05/01/2026", "28/02/2026", "03/04/2026"]
+        result = _make_loader_result("order_date", values, [str] * 4)
+        assert analyze_mixed_dates(result) == []
+
+    def test_clean_dd_mm_yy_column_no_finding(self):
+        values = ["15/01/26", "05/01/26", "28/02/26"]
+        result = _make_loader_result("order_date", values, [str] * 3)
+        assert analyze_mixed_dates(result) == []
+
+    def test_all_ambiguous_column_no_finding(self):
+        values = ["01/02/2026", "03/04/2026", "05/06/2026"]
+        result = _make_loader_result("order_date", values, [str] * 3)
+        assert analyze_mixed_dates(result) == []
+
+    def test_real_mm_dd_vs_dd_mm_mix_still_found(self):
+        values = ["01/15/2026", "15/01/2026", "05/01/2026"]
+        result = _make_loader_result("order_date", values, [str] * 3)
+        findings = analyze_mixed_dates(result)
+        assert len(findings) == 1
+        assert set(findings[0].evidence["formats_found"]) == {"%m/%d/%Y", "%d/%m/%Y"}
+        assert findings[0].evidence["total_date_values"] == 3
+
+
+# ---------------------------------------------------------------------------
 # Edge case: unparseable date-like strings -- gracefully skip
 # ---------------------------------------------------------------------------
 

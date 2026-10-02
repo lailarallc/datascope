@@ -10,6 +10,7 @@ Severity is *not* assigned here -- that is the severity classifier's job (U7).
 from __future__ import annotations
 
 import re
+from collections import Counter
 from datetime import datetime
 
 from datascope.analyzers.type_consistency import normalize_type
@@ -144,20 +145,21 @@ DATE_LIKE_RE = re.compile(
 )
 
 
-def _try_parse_date(value: str) -> str | None:
-    """Try to parse *value* with each known format.
+def _matching_date_formats(value: str) -> list[str]:
+    """Return every known format that parses *value*, in ``_DATE_FORMATS`` order.
 
-    Returns the first matching format string, or ``None`` if no
-    format matched.
+    A value such as ``05/01/2026`` fits both ``%m/%d/%Y`` and ``%d/%m/%Y``;
+    an empty list means no format matched.
     """
     value = value.strip()
+    matches: list[str] = []
     for fmt in _DATE_FORMATS:
         try:
             datetime.strptime(value, fmt)
-            return fmt
         except ValueError:
             continue
-    return None
+        matches.append(fmt)
+    return matches
 
 
 def analyze_mixed_dates(result: LoaderResult) -> list[Finding]:
@@ -182,9 +184,8 @@ def analyze_mixed_dates(result: LoaderResult) -> list[Finding]:
     for col_name, types_list in result.cell_types.items():
         col_values = list(result.dataframe[col_name])
 
-        # Track which format each date-like string matched
-        format_to_examples: dict[str, list[str]] = {}
-        total_date_values = 0
+        # Every format each date-like string fits
+        candidates: list[tuple[str, list[str]]] = []
 
         for val, ct in zip(col_values, types_list):
             if ct is not str:
@@ -199,12 +200,20 @@ def analyze_mixed_dates(result: LoaderResult) -> list[Finding]:
             if not DATE_LIKE_RE.match(val_str):
                 continue
 
-            fmt = _try_parse_date(val_str)
-            if fmt is None:
+            fmts = _matching_date_formats(val_str)
+            if not fmts:
                 # Unparseable -- skip gracefully
                 continue
+            candidates.append((val_str, fmts))
 
-            total_date_values += 1
+        # An ambiguous value (05/01/2026) follows the format with the most
+        # support in the column, not the first pattern tried, so a clean
+        # DD/MM/YYYY column reads as one format. Ties keep _DATE_FORMATS order.
+        support = Counter(fmt for _, fmts in candidates for fmt in fmts)
+        format_to_examples: dict[str, list[str]] = {}
+        total_date_values = len(candidates)
+        for val_str, fmts in candidates:
+            fmt = max(fmts, key=lambda f: support[f])
             if fmt not in format_to_examples:
                 format_to_examples[fmt] = []
             if len(format_to_examples[fmt]) < 5:
