@@ -26,3 +26,15 @@ datascope work. fleet-ops baseline now down to 1 pre-existing red (`lailara-inta
 baseline red: `lailara-intake` deploy fails on npm ERESOLVE (wrangler@3.90.0 wants
 `@cloudflare/workers-types@^4`, project pins `^5`) — align versions, redeploy. That
 work lives in the lailara-intake repo, not here.
+
+## 2026-10-02 12:11
+
+**What changed:** datascope Wave 3 critical fixed: (1) DD/MM/YYYY false mixed-date finding — cd10539; (2) ragged CSV rows now a CRITICAL MALFORMED_ROWS finding — 310ca25. 388 tests pass, ruff clean. Not released; proposed version 2.5.0.
+
+**Why:** 2026-10-01 audit critical (.dev/PLAN.md). Clients were told clean DD/MM columns mixed formats, and an unquoted comma dropped values with no finding.
+
+**State:** Both fixes test-first (new tests failed on old code). Samples unchanged (fidelity test passes). Loader still cuts/pads ragged rows; it now reports them. CHANGELOG not updated (done at release). PyPI still 2.4.2.
+
+**Next:** Release 2.5.0 (new finding type = minor bump): CHANGELOG entry, bump pyproject, regenerate samples, tag.
+
+---
