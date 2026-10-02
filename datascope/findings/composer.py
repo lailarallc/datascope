@@ -17,6 +17,7 @@ _TEMPLATE_MAP = {
     FindingType.NEAR_CONSTANT: templates.near_constant,
     FindingType.DUPLICATE_IDS: templates.suspected_duplicate_ids,
     FindingType.MISSING_VALUE_PATTERN: templates.missing_value_pattern,
+    FindingType.MALFORMED_ROWS: templates.malformed_rows,
 }
 
 

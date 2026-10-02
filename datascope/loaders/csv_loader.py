@@ -143,8 +143,24 @@ def load_csv(path: Path) -> LoaderResult:
             # Single-pass: infer types and build column-major type lists
             col_types: list[list[type]] = [[] for _ in range(n_cols)]
             inferred_rows: list[list[object]] = []
+            # Rows wider or narrower than the header are still cut or padded
+            # to fit, but recorded so the report can say so.
+            too_many = too_few = 0
+            malformed_examples: list[dict[str, object]] = []
 
             for raw_row in reader:
+                if raw_row and len(raw_row) != n_cols:
+                    example: dict[str, object] = {
+                        "line": reader.line_num,
+                        "field_count": len(raw_row),
+                    }
+                    if len(raw_row) > n_cols:
+                        too_many += 1
+                        example["dropped_values"] = raw_row[n_cols:]
+                    else:
+                        too_few += 1
+                    if len(malformed_examples) < 5:
+                        malformed_examples.append(example)
                 padded = raw_row + [""] * max(0, n_cols - len(raw_row))
                 row = [_infer_cell(padded[i]) for i in range(n_cols)]
                 inferred_rows.append(row)
@@ -173,6 +189,14 @@ def load_csv(path: Path) -> LoaderResult:
         "row_count": len(inferred_rows),
         "column_count": n_cols,
     }
+    if too_many or too_few:
+        source_metadata["malformed_rows"] = {
+            "expected_fields": n_cols,
+            "count": too_many + too_few,
+            "too_many": too_many,
+            "too_few": too_few,
+            "examples": malformed_examples,
+        }
 
     return LoaderResult(
         dataframe=df,

@@ -211,6 +211,18 @@ class TestCardinalityAnomaly:
         assert classify_severity(finding) is Severity.WARNING
 
 
+class TestMalformedRows:
+
+    def test_malformed_rows_is_critical(self):
+        """Rows cut or padded to the header width lose data silently -> CRITICAL."""
+        finding = _make_finding(
+            FindingType.MALFORMED_ROWS,
+            {"expected_fields": 3, "count": 1, "too_many": 1, "too_few": 0, "examples": []},
+            field_name="(all columns)",
+        )
+        assert classify_severity(finding) is Severity.CRITICAL
+
+
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------

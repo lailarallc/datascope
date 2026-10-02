@@ -38,6 +38,7 @@ class FindingType(enum.Enum):
     NEAR_CONSTANT = "near_constant"
     DUPLICATE_IDS = "duplicate_ids"
     MISSING_VALUE_PATTERN = "missing_value_pattern"
+    MALFORMED_ROWS = "malformed_rows"
 
 
 # ---------------------------------------------------------------------------

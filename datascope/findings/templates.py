@@ -409,3 +409,60 @@ def missing_value_pattern(field_name: str, evidence: dict[str, Any]) -> dict[str
         "fix_recommendation": fix_recommendation,
         "prevention_rule": prevention_rule,
     }
+
+
+# ---------------------------------------------------------------------------
+# MALFORMED_ROWS
+# ---------------------------------------------------------------------------
+
+def malformed_rows(field_name: str, evidence: dict[str, Any]) -> dict[str, str]:
+    """Template for CSV rows whose field count differs from the header."""
+    expected = evidence.get("expected_fields", 0)
+    count = evidence.get("count", 0)
+    too_many = evidence.get("too_many", 0)
+    too_few = evidence.get("too_few", 0)
+    examples = evidence.get("examples", [])
+
+    row_word = "row has" if count == 1 else "rows have"
+    parts = []
+    if too_many:
+        parts.append(f"{too_many} with more fields")
+    if too_few:
+        parts.append(f"{too_few} with fewer fields")
+    example_parts = []
+    for ex in examples[:3]:
+        text = f"line {ex.get('line')} has {ex.get('field_count')} fields"
+        dropped = ex.get("dropped_values")
+        if dropped:
+            text += f" (dropped: {_join_examples(dropped)})"
+        example_parts.append(text)
+
+    assumption = (
+        f"Every row in the file has the same {expected} fields as the header."
+    )
+    reality = (
+        f"However, {count} {row_word} a different number of fields "
+        f"({' and '.join(parts)}). For example: {'; '.join(example_parts)}."
+    )
+    impact = (
+        "Extra fields are dropped and missing fields are left blank, so "
+        "these rows lose values without any error. An unquoted comma inside "
+        "a value also shifts the rest of its row into the wrong columns, "
+        "so totals and joins on those columns are wrong."
+    )
+    fix_recommendation = (
+        "Open the listed lines in a text editor. Quote any value that "
+        "contains a comma, add the missing fields, and re-export the file."
+    )
+    prevention_rule = (
+        "Export CSVs with every text field quoted, and reject any file "
+        "whose rows do not all have the header's field count."
+    )
+
+    return {
+        "assumption": assumption,
+        "reality": reality,
+        "impact": impact,
+        "fix_recommendation": fix_recommendation,
+        "prevention_rule": prevention_rule,
+    }

@@ -583,6 +583,38 @@ class TestIntegrationPipeline:
 
 
 # ---------------------------------------------------------------------------
+# MALFORMED_ROWS
+# ---------------------------------------------------------------------------
+
+class TestComposeMalformedRows:
+
+    @pytest.fixture()
+    def finding(self) -> Finding:
+        f = _make_finding(
+            FindingType.MALFORMED_ROWS,
+            {
+                "expected_fields": 3,
+                "count": 2,
+                "too_many": 1,
+                "too_few": 1,
+                "examples": [
+                    {"line": 3, "field_count": 4, "dropped_values": ["EXTRA"]},
+                    {"line": 4, "field_count": 2},
+                ],
+            },
+            field_name="(all columns)",
+        )
+        return compose_finding(f)
+
+    def test_all_text_fields_populated(self, finding):
+        _assert_all_text_fields_populated(finding)
+
+    def test_reality_names_lines_and_dropped_values(self, finding):
+        assert "line 3 has 4 fields (dropped: 'EXTRA')" in finding.reality
+        assert "line 4 has 2 fields" in finding.reality
+
+
+# ---------------------------------------------------------------------------
 # Package exports
 # ---------------------------------------------------------------------------
 

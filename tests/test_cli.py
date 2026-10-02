@@ -301,6 +301,30 @@ class TestOutputNaming:
 
 
 # ===================================================================
+# CSV rows with the wrong number of fields are reported, not absorbed
+# ===================================================================
+
+class TestMalformedCsvRows:
+
+    def test_json_reports_malformed_rows_finding(self, capsys, tmp_path):
+        import json
+
+        csv_path = _write_csv(tmp_path, """\
+            sku,qty,price
+            A1,5,9.99
+            A2,3,4.50,EXTRA
+            A3,7
+        """, name="orders.csv")
+        main([str(csv_path), "--output-dir", str(tmp_path), "--format", "json"])
+        payload = json.loads((tmp_path / "orders_diagnostic.json").read_text(encoding="utf-8"))
+        found = [f for f in payload["findings"] if f["finding_type"] == "malformed_rows"]
+        assert len(found) == 1
+        assert found[0]["severity"] == "critical"
+        assert found[0]["evidence"]["count"] == 2
+        assert "EXTRA" in found[0]["reality"]
+
+
+# ===================================================================
 # A check that crashes must not produce a report that reads as complete
 # ===================================================================
 

@@ -48,6 +48,7 @@ class TestFindingType:
             "NEAR_CONSTANT",
             "DUPLICATE_IDS",
             "MISSING_VALUE_PATTERN",
+            "MALFORMED_ROWS",
         }
         assert {ft.name for ft in FindingType} == expected
 

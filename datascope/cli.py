@@ -269,6 +269,7 @@ def main(argv: list[str] | None = None) -> None:
     from datascope.analyzers import (
         analyze_cardinality,
         analyze_leading_zeros,
+        analyze_malformed_rows,
         analyze_missing_values,
         analyze_mixed_dates,
         analyze_sentinels,
@@ -282,6 +283,7 @@ def main(argv: list[str] | None = None) -> None:
         analyze_mixed_dates,
         analyze_cardinality,
         analyze_missing_values,
+        analyze_malformed_rows,
     ]
 
     all_findings: list = []

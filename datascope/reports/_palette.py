@@ -59,6 +59,7 @@ FINDING_TYPE_LABELS: dict[FindingType, str] = {
     FindingType.NEAR_CONSTANT: "Near-Constant Column",
     FindingType.DUPLICATE_IDS: "Suspected Duplicate IDs",
     FindingType.MISSING_VALUE_PATTERN: "Missing Values",
+    FindingType.MALFORMED_ROWS: "Malformed Rows",
 }
 
 

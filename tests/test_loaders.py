@@ -221,6 +221,31 @@ class TestLoadCsv:
         assert result.source_metadata["row_count"] == 3
         assert result.source_metadata["column_count"] == 2
 
+    def test_rows_with_wrong_field_count_are_recorded(self, tmp_path):
+        # An unquoted comma adds a field; a short row drops one. Both used to be
+        # cut or padded to the header width with no trace.
+        csv_path = _write_csv(tmp_path, """\
+            sku,qty,price
+            A1,5,9.99
+            A2,3,4.50,EXTRA
+            A3,7
+            A4,1,2.00
+        """)
+        malformed = load_csv(csv_path).source_metadata["malformed_rows"]
+        assert malformed["expected_fields"] == 3
+        assert malformed["count"] == 2
+        assert malformed["too_many"] == 1
+        assert malformed["too_few"] == 1
+        assert malformed["examples"] == [
+            {"line": 3, "field_count": 4, "dropped_values": ["EXTRA"]},
+            {"line": 4, "field_count": 2},
+        ]
+
+    def test_well_formed_csv_records_no_malformed_rows(self, tmp_path):
+        # A blank line (e.g. a trailing newline) is not a malformed row.
+        csv_path = _write_csv(tmp_path, "a,b\n1,2\n\n3,4\n")
+        assert "malformed_rows" not in load_csv(csv_path).source_metadata
+
     def test_empty_file_returns_empty_result(self, tmp_path):
         csv_path = tmp_path / "empty.csv"
         csv_path.write_text("", encoding="utf-8")

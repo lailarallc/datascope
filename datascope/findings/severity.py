@@ -50,4 +50,8 @@ def classify_severity(finding: Finding) -> Severity:
             return Severity.WARNING
         return Severity.INFO
 
+    if ft is FindingType.MALFORMED_ROWS:
+        # Extra fields are dropped and short rows shift into the wrong columns.
+        return Severity.CRITICAL
+
     return Severity.INFO
